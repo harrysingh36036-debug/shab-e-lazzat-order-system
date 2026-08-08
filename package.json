@@ -1,0 +1,11 @@
+{
+  "name": "shab-e-lazzat-order-system",
+  "version": "1.0.0",
+  "description": "Shab-E-Lazzat Order & Inventory System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

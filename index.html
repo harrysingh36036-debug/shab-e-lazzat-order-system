@@ -1352,6 +1352,12 @@
         const SESSION_KEY = 'shab_session_v1';
         let currentUser = null;
 
+        async function hashPassword(password, salt) {
+            const data = new TextEncoder().encode(salt + ':' + password);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         function getUsers() {
             try { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); } catch (e) { return []; }
         }
@@ -1460,6 +1466,17 @@
         $('userChipBtn').addEventListener('click', () => {
             if (confirm('Sign out of Shab-E-Lazzat?')) handleLogout();
         });
+
+        // Seed a default admin account on first run (no users yet)
+        async function bootstrapDefaultUser() {
+            const users = getUsers();
+            if (users.length) return;
+            const salt = Math.random().toString(36).slice(2, 10);
+            const h = await hashPassword('admin123', salt);
+            users.push({ u: 'admin', s: salt, h, admin: true });
+            setUsers(users);
+            console.info('Seeded default account: admin / admin123');
+        }
 
         function startApp() {
             loadAll();
@@ -3082,7 +3099,7 @@ function jsonResponse(obj, status) {
         // ============================================================
         // INITIALIZE — gated behind login, then sync from Sheets
         // ============================================================
-        (function boot() {
+        (async function boot() {
             const sess = sessionStorage.getItem(SESSION_KEY);
             if (sess && getUsers().some(x => x.u.toLowerCase() === sess.toLowerCase())) {
                 setSession(sess);
@@ -3102,6 +3119,7 @@ function jsonResponse(obj, status) {
                 })();
                 return;
             }
+            await bootstrapDefaultUser();
             updateLoginUI();
             $('loginUsername').focus();
         })();

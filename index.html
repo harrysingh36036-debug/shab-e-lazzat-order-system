@@ -1178,14 +1178,82 @@
         };
 
         // ============================================================
-        // AUTH LAYER — user accounts, password hashing, sessions
+        // SHEETS CLIENT — Google Sheets as shared backend
+        // ============================================================
+        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec';
+        let sheetsSyncing = false;
+
+        async function sheetsFetch(action, payload) {
+            try {
+                const res = await fetch(SHEETS_URL, {
+                    method: action === 'read' ? 'GET' : 'POST',
+                    headers: action === 'read' ? {} : { 'Content-Type': 'text/plain' },
+                    body: action === 'read' ? null : JSON.stringify(payload)
+                });
+                const txt = await res.text();
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return JSON.parse(txt);
+            } catch (e) {
+                console.warn('Sheets sync failed:', e.message);
+                return { ok: false, error: e.message, offline: true };
+            }
+        }
+
+        async function sheetsReadAll() {
+            return sheetsFetch('read');
+        }
+
+        function mergeSheetsData(data) {
+            if (data.sales) state.salesOrders = data.sales;
+            if (data.purchases) state.purchaseOrders = data.purchases;
+            if (data.inventory) state.inventory = data.inventory;
+            if (data.settings) {
+                data.settings.forEach(row => {
+                    try { state.settings[row.key] = JSON.parse(row.value); } catch (e) { state.settings[row.key] = row.value; }
+                });
+            }
+            saveAll(); // persist merged data locally
+        }
+
+        async function sheetsWriteAll() {
+            if (sheetsSyncing) return { ok: true, queued: true };
+            sheetsSyncing = true;
+            try {
+                const payload = {
+                    action: 'replace',
+                    tables: {
+                        sales: state.salesOrders,
+                        purchases: state.purchaseOrders,
+                        inventory: state.inventory,
+                        settings: Object.entries(state.settings).map(([k, v]) => ({ key: k, value: JSON.stringify(v) }))
+                    }
+                };
+                // POST expects action: replace with tables object
+                // We'll POST each table separately since script expects table per call
+                // Actually our script expects single table per POST with action: replace
+                // Let's do sequential writes
+                const tables = [
+                    { table: 'sales', items: state.salesOrders },
+                    { table: 'purchases', items: state.purchaseOrders },
+                    { table: 'inventory', items: state.inventory },
+                    { table: 'settings', items: Object.entries(state.settings).map(([k, v]) => ({ key: k, value: JSON.stringify(v) })) }
+                ];
+                for (const t of tables) {
+                    const res = await sheetsFetch('write', { action: 'replace', table: t.table, items: t.items });
+                    if (!res.ok && !res.offline) console.warn('Sheets write failed for', t.table, res.error);
+                }
+                return { ok: true };
+            } finally {
+                sheetsSyncing = false;
+            }
+        }
+
+        // ============================================================
+        // AUTH LAYER — login only (shared data, no isolation)
         // ============================================================
         const USERS_KEY = 'shab_users';
         const SESSION_KEY = 'shab_session_v1';
         let currentUser = null;
-        let storagePrefix = '';
-
-        const userPrefix = u => 'sh_' + String(u).toLowerCase().replace(/[^a-z0-9_]/g, '') + '_';
 
         function getUsers() {
             try { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); } catch (e) { return []; }
@@ -1194,38 +1262,24 @@
             try { localStorage.setItem(USERS_KEY, JSON.stringify(list)); } catch (e) {}
         }
 
-        async function hashPassword(pw, salt) {
-            const text = salt + '|' + pw;
-            try {
-                if (crypto && crypto.subtle) {
-                    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-                    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-                }
-            } catch (e) {}
-            let h = 5381;
-            for (let i = 0; i < text.length; i++) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
-            return 'f' + h.toString(16);
-        }
-
         function setSession(username) {
             currentUser = username;
-            storagePrefix = userPrefix(username);
             sessionStorage.setItem(SESSION_KEY, username);
         }
 
         function clearSession() {
             currentUser = null;
-            storagePrefix = '';
             sessionStorage.removeItem(SESSION_KEY);
         }
 
+        // Legacy migration (one-time from old v1 keys)
         function migrateLegacyData() {
             const legacy = Object.values(STORAGE_KEYS);
-            const anyNew = legacy.some(k => localStorage.getItem(storagePrefix + k) !== null);
+            const anyNew = legacy.some(k => localStorage.getItem(k) !== null);
             if (anyNew) return;
             legacy.forEach(k => {
-                const v = localStorage.getItem(k);
-                if (v !== null) { try { localStorage.setItem(storagePrefix + k, v); } catch (e) {} }
+                const v = localStorage.getItem('shab_' + k.split('_').pop());
+                if (v !== null) { try { localStorage.setItem(k, v); } catch (e) {} }
             });
         }
 
@@ -1494,14 +1548,16 @@
 
         function saveAll() {
             Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
-                try { localStorage.setItem(storagePrefix + storageKey, JSON.stringify(state[key])); } catch (e) { console.error('Save failed:', key, e); }
+                try { localStorage.setItem(storageKey, JSON.stringify(state[key])); } catch (e) { console.error('Save failed:', key, e); }
             });
+            // Async sync to Google Sheets (non-blocking)
+            sheetsWriteAll().catch(e => console.warn('Sheets sync error:', e));
         }
 
         function loadAll() {
             Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
                 try {
-                    const data = localStorage.getItem(storagePrefix + storageKey);
+                    const data = localStorage.getItem(storageKey);
                     if (data) state[key] = key === 'settings' ? { ...state.settings, ...JSON.parse(data) } : JSON.parse(data);
                 } catch (e) { console.error('Load failed:', key, e); }
             });
@@ -2771,7 +2827,7 @@
         });
 
         // ============================================================
-        // INITIALIZE — gated behind login
+        // INITIALIZE — gated behind login, then sync from Sheets
         // ============================================================
         (function boot() {
             const sess = sessionStorage.getItem(SESSION_KEY);
@@ -2779,7 +2835,18 @@
                 setSession(sess);
                 migrateLegacyData();
                 setupSessionUI(sess);
+                // Load local data instantly
+                loadAll();
                 startApp();
+                // Then sync from Sheets in background
+                (async () => {
+                    const res = await sheetsReadAll();
+                    if (res.ok && res.data) {
+                        mergeSheetsData(res.data);
+                        renderAll();
+                        toast('Synced from Google Sheets');
+                    }
+                })();
                 return;
             }
             updateLoginUI();

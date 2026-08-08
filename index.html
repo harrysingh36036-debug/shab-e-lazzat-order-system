@@ -409,14 +409,14 @@
                 <div class="pt-4 border-t border-stone-200">
                     <h3 class="font-semibold text-sm mb-3 flex items-center gap-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Google Sheets Sync</h3>
                     <div class="space-y-3">
-                        <p class="text-xs text-stone-500">Deploy the Apps Script once, paste its Web App URL below. Data pushes straight into your sheet as rows.</p>
+                        <p class="text-xs text-stone-500">Deploy the Cloudflare Worker once (it hides your Google token). Enter the Worker URL and its sync password below — the Google /exec URL and token never touch this page.</p>
                         <div>
-                            <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="sheetsUrl">Apps Script Web App URL</label>
-                            <input type="url" id="sheetsUrl" class="field w-full px-3 py-2 text-sm" placeholder="https://script.google.com/macros/s/.../exec">
+                            <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="sheetsUrl">Sync Server URL (your Worker)</label>
+                            <input type="url" id="sheetsUrl" class="field w-full px-3 py-2 text-sm" placeholder="https://your-worker-name.workers.dev">
                         </div>
                         <div>
-                            <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="sheetsToken">Secret Token (same one you put in the script)</label>
-                            <input type="password" id="sheetsToken" class="field w-full px-3 py-2 text-sm" placeholder="Set a secret token to protect your sheet">
+                            <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="sheetsToken">Sync Password (matches the Worker's APP_PASSWORD)</label>
+                            <input type="password" id="sheetsToken" class="field w-full px-3 py-2 text-sm" placeholder="Type it in — keep it out of the page source">
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button id="pushSalesBtn" class="ghost-btn font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-2 border border-stone-300 hover:border-amber-400">
@@ -1283,21 +1283,22 @@
         };
 
         // ============================================================
-        // SHEETS CLIENT — Google Sheets as shared backend
+        // SHEETS CLIENT — Google Sheets as shared backend (via Worker)
         // ============================================================
-        const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec';
+        // The Worker URL + sync password live ONLY in Settings (typed by
+        // the owner). No credentials are ever shipped in this file.
         let sheetsSyncing = false;
 
         async function sheetsFetch(action, payload) {
             try {
-                const token = state.settings.sheetsToken || '';
-                const url = SHEETS_URL + (action === 'read' ? '?token=' + encodeURIComponent(token) : '');
-                const body = action === 'read' ? null : JSON.stringify({ token, ...(payload || {}) });
-                const res = await fetch(url, {
-                    method: action === 'read' ? 'GET' : 'POST',
-                    headers: action === 'read' ? {} : { 'Content-Type': 'text/plain' },
-                    body
-                });
+                const url = (state.settings.sheetsUrl || '').trim();
+                if (!url) return { ok: false, error: 'Sync server not configured — add its URL in Settings', offline: true };
+                const pass = state.settings.sheetsToken || '';
+                const isRead = action === 'read';
+                const headers = { 'Authorization': 'Bearer ' + pass };
+                const body = isRead ? null : JSON.stringify(payload || {});
+                if (!isRead) headers['Content-Type'] = 'application/json';
+                const res = await fetch(url, { method: isRead ? 'GET' : 'POST', headers, body });
                 const txt = await res.text();
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return JSON.parse(txt);
@@ -1488,16 +1489,7 @@
             if (confirm('Sign out of Shab-E-Lazzat?')) handleLogout();
         });
 
-        // Seed the default admin account if it doesn't already exist
-        async function bootstrapDefaultUser() {
-            const users = getUsers();
-            if (users.some(x => x.u.toLowerCase() === 'admin')) return;
-            const salt = Math.random().toString(36).slice(2, 10);
-            const h = await hashPassword('admin123', salt);
-            users.push({ u: 'admin', s: salt, h, admin: true });
-            setUsers(users);
-            console.info('Seeded default account: admin / admin123');
-        }
+        // No auto-seeded admin — the first visitor must create a real account
 
         function startApp() {
             loadAll();
@@ -1649,7 +1641,7 @@
             salesCatalog: [],
             salesOrders: [],
             customers: [],
-            settings: { theme: 'light', density: false, accent: '#b45309', sheetsUrl: 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec', sheetsToken: 'A35DDVFDH543GHDFI7TDGBD' },
+            settings: { theme: 'light', density: false, accent: '#b45309', sheetsUrl: '', sheetsToken: '' },
             history: [],
             // Staged orders
             stagedPurchase: [],
@@ -1677,9 +1669,9 @@
                     if (data) state[key] = key === 'settings' ? { ...state.settings, ...JSON.parse(data) } : JSON.parse(data);
                 } catch (e) { console.error('Load failed:', key, e); }
             });
-            // Ensure sync config always present (older saves may lack the token)
-            state.settings.sheetsUrl = state.settings.sheetsUrl || 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec';
-            state.settings.sheetsToken = state.settings.sheetsToken || 'A35DDVFDH543GHDFI7TDGBD';
+            // Sync config is never defaulted here — the owner enters it in Settings
+            state.settings.sheetsUrl = (state.settings.sheetsUrl || '').trim() || '';
+            state.settings.sheetsToken = state.settings.sheetsToken || '';
             // Initialize defaults if empty
             if (!state.purchaseCatalog.length) state.purchaseCatalog = DEFAULT_PURCHASE_CATALOG;
             if (!state.salesCatalog.length) state.salesCatalog = DEFAULT_SALES_CATALOG;
@@ -2900,9 +2892,16 @@
         // ============================================================
         const APPS_SCRIPT_CODE = `/**
  * Shab-E-Lazzat — Google Sheets Backend
- * Deploy as Web App: Execute as Me, Who has access: Anyone
+ * Deploy as: Google Apps Script → Extensions → Apps Script → paste → Deploy → New deployment → Web app
+ * Execute as Me, Who has access: Anyone → Deploy.
+ *
+ * ONE-TIME SETUP (in the Apps Script editor, before deploying):
+ * run this once (replace YourLongRandomToken):
+ *   PropertiesService.getScriptProperties().setProperty('SECRET_TOKEN', 'YourLongRandomToken');
+ * The same value goes into the Cloudflare Worker secret SHEETS_TOKEN.
+ * The token is NEVER hardcoded here so the public page source exposes nothing.
  */
-const SECRET_TOKEN = 'change-me-to-your-own-token'; // must match app Settings — set to: A35DDVFDH543GHDFI7TDGBD
+var SECRET_TOKEN = PropertiesService.getScriptProperties().getProperty('SECRET_TOKEN') || '';
 
 const SHEET_NAMES = {
   sales: 'Sales', purchases: 'Purchases', inventory: 'Inventory',
@@ -2917,6 +2916,7 @@ const HEADERS = {
 };
 
 function checkToken(e) {
+  if (!SECRET_TOKEN) return false;
   var sent = e && e.parameter && e.parameter.token;
   if (e && e.postData) {
     try { var p = JSON.parse(e.postData.contents); sent = p.token || sent; } catch (err) {}
@@ -2947,7 +2947,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
-    if (payload.token !== SECRET_TOKEN) return jsonResponse({ ok: false, error: 'Unauthorized' }, 403);
+    if (!SECRET_TOKEN || payload.token !== SECRET_TOKEN) return jsonResponse({ ok: false, error: 'Unauthorized' }, 403);
     const action = payload.action || 'upsert';
     const table = payload.table;
     const items = payload.items || [];
@@ -3122,7 +3122,6 @@ function jsonResponse(obj, status) {
                 })();
                 return;
             }
-            await bootstrapDefaultUser();
             updateLoginUI();
             $('loginUsername').focus();
         })();

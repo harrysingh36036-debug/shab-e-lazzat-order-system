@@ -1,8 +1,15 @@
 ﻿/**
- * Shab-E-Lazzat â€” Google Sheets Backend
- * Deploy as Web App: Execute as Me, Who has access: Anyone
+ * Shab-E-Lazzat — Google Sheets Backend
+ * Deploy as: Extensions → Apps Script → paste → Deploy → New deployment → Web app
+ * Execute as Me, Who has access: Anyone → Deploy.
+ *
+ * ONE-TIME SETUP (in the Apps Script editor, before deploying):
+ * run this once (replace YourLongRandomToken):
+ *   PropertiesService.getScriptProperties().setProperty('SECRET_TOKEN', 'YourLongRandomToken');
+ * The same value goes into the Cloudflare Worker secret SHEETS_TOKEN.
+ * The token is NEVER hardcoded here so the public page source exposes nothing.
  */
-const SECRET_TOKEN = 'A35DDVFDH543GHDFI7TDGBD'; // must match app Settings
+var SECRET_TOKEN = PropertiesService.getScriptProperties().getProperty('SECRET_TOKEN') || '';
 
 const SHEET_NAMES = {
   sales: 'Sales', purchases: 'Purchases', inventory: 'Inventory',
@@ -17,6 +24,7 @@ const HEADERS = {
 };
 
 function checkToken(e) {
+  if (!SECRET_TOKEN) return false;
   var sent = e && e.parameter && e.parameter.token;
   if (e && e.postData) {
     try { var p = JSON.parse(e.postData.contents); sent = p.token || sent; } catch (err) {}
@@ -46,8 +54,8 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    const payload = JSON.parse(e.postData.contents);
-    if (payload.token !== SECRET_TOKEN) return jsonResponse({ ok: false, error: 'Unauthorized' }, 403);
+const payload = JSON.parse(e.postData.contents);
+    if (!SECRET_TOKEN || payload.token !== SECRET_TOKEN) return jsonResponse({ ok: false, error: 'Unauthorized' }, 403);
     const action = payload.action || 'upsert';
     const table = payload.table;
     const items = payload.items || [];

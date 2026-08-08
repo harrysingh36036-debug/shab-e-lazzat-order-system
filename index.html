@@ -291,10 +291,15 @@
                     <span>Sales</span>
                     <kbd class="ml-auto hidden sm:inline">3</kbd>
                 </button>
+                <button role="tab" data-tab="customers" class="tab-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition font-medium">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                    <span>Customers</span>
+                    <kbd class="ml-auto hidden sm:inline">4</kbd>
+                </button>
                 <button role="tab" data-tab="dashboard" class="tab-btn w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition font-medium">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     <span>Dashboard</span>
-                    <kbd class="ml-auto hidden sm:inline">4</kbd>
+                    <kbd class="ml-auto hidden sm:inline">5</kbd>
                 </button>
             </nav>
             <div class="p-4 border-t border-stone-200">
@@ -336,6 +341,10 @@
                 <button role="tab" data-tab="sales" class="tab-btn px-4 py-2.5 rounded-lg flex items-center gap-2 text-amber-100 hover:text-white hover:bg-white/10 transition font-medium text-sm" aria-selected="false">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6L12 2L16 6"/><path d="M12 2V22"/><path d="M15.5 22H9a2 2 0 0 1-2-2V6.5"/><path d="M5 6h14"/><path d="M9 6v13"/></svg>
                     <span>Sales</span>
+                </button>
+                <button role="tab" data-tab="customers" class="tab-btn px-4 py-2.5 rounded-lg flex items-center gap-2 text-amber-100 hover:text-white hover:bg-white/10 transition font-medium text-sm" aria-selected="false">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                    <span>Customers</span>
                 </button>
                 <button role="tab" data-tab="dashboard" class="tab-btn px-4 py-2.5 rounded-lg flex items-center gap-2 text-amber-100 hover:text-white hover:bg-white/10 transition font-medium text-sm" aria-selected="false">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -404,6 +413,10 @@
                         <div>
                             <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="sheetsUrl">Apps Script Web App URL</label>
                             <input type="url" id="sheetsUrl" class="field w-full px-3 py-2 text-sm" placeholder="https://script.google.com/macros/s/.../exec">
+                        </div>
+                        <div>
+                            <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="sheetsToken">Secret Token (same one you put in the script)</label>
+                            <input type="password" id="sheetsToken" class="field w-full px-3 py-2 text-sm" placeholder="Set a secret token to protect your sheet">
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <button id="pushSalesBtn" class="ghost-btn font-semibold px-3 py-2 rounded-xl text-xs flex items-center gap-2 border border-stone-300 hover:border-amber-400">
@@ -749,6 +762,12 @@
                         <input type="time" step="1" id="s_order_time" class="field w-full px-3 py-2.5 text-sm">
                     </div>
                     <div>
+                        <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="s_customer">Customer</label>
+                        <select id="s_customer" class="field w-full px-3 py-2.5 text-sm">
+                            <option value="">Walk-in (no account)</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="s_time_block">Time Block</label>
                         <select id="s_time_block" class="field w-full px-3 py-2.5 text-sm">
                             <option>Evening Rush (5-9PM)</option>
@@ -915,6 +934,43 @@
         </section>
 
         <!-- DASHBOARD TAB -->
+        <!-- CUSTOMERS TAB -->
+        <section id="tab-customers" class="tab-panel" role="tabpanel" aria-labelledby="customers-tab">
+            <div class="card p-5 md:p-6 shadow-sm fade-in">
+                <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-6 rounded-full" style="background:var(--accent)"></span>
+                        <h2 class="text-base font-bold display">Customer Database</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="search" id="c_search" placeholder="Search name / phone…" class="field px-3 py-2 text-sm w-52">
+                        <button id="c_exportBtn" class="ghost-btn font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2 border border-stone-300 hover:border-teal-400" title="Export customers to CSV">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
+                        </button>
+                        <button id="newCustomerBtn" class="accent-btn font-semibold px-4 py-2 rounded-xl text-sm flex items-center gap-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                            Add Customer
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-stone-200">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-stone-100 dark:bg-stone-800 text-left text-xs uppercase tracking-wider text-stone-500">
+                                <th class="px-4 py-3 font-semibold">Name</th>
+                                <th class="px-4 py-3 font-semibold">Phone</th>
+                                <th class="px-4 py-3 font-semibold">Address</th>
+                                <th class="px-4 py-3 font-semibold">Notes</th>
+                                <th class="px-4 py-3 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="c_customersTable" class="divide-y divide-stone-100"></tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-stone-400 mt-3 mb-2">Saved locally in your browser and synced to Google Sheets.</p>
+            </div>
+        </section>
+
         <section id="tab-dashboard" class="tab-panel" role="tabpanel" aria-labelledby="dashboard-tab">
             <!-- Stats Cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -1022,7 +1078,7 @@
         </section>
 
         <footer class="text-center text-xs text-stone-400 pb-6 no-print">
-            Shab-E-Lazzat · Purchase · Inventory · Sales Manager — All data stored locally in your browser.
+            Shab-E-Lazzat · Purchase · Inventory · Sales · Customers Manager — Saved locally and synced to Google Sheets.
         </footer>
     </main>
 
@@ -1141,6 +1197,54 @@
         </div>
     </div>
 
+    <!-- Add/Edit Customer Modal -->
+    <div id="customerModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+        <div class="modal-overlay absolute inset-0" aria-hidden="true"></div>
+        <div class="relative card w-full max-w-lg scale-in">
+            <div class="p-4 border-b border-stone-200 flex items-center justify-between">
+                <h2 id="customerModalTitle" class="font-bold display">Add Customer</h2>
+                <button id="customerModalClose" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-stone-100 text-stone-500" aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form id="customerForm" class="p-4 space-y-4">
+                <input type="hidden" id="customer_id">
+                <div>
+                    <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="customer_name">Full Name *</label>
+                    <input type="text" id="customer_name" required class="field w-full px-3 py-2.5 text-sm" placeholder="e.g., Ramesh Gupta">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="customer_phone">Phone *</label>
+                        <input type="tel" id="customer_phone" required class="field w-full px-3 py-2.5 text-sm" placeholder="e.g., 98765 43210">
+                    </div>
+                    <div>
+                        <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="customer_type">Type</label>
+                        <select id="customer_type" class="field w-full px-3 py-2.5 text-sm">
+                            <option>Regular</option>
+                            <option>Walk-in</option>
+                            <option>Online / Delivery</option>
+                            <option>Bulk / Catering</option>
+                            <option>VIP</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="customer_address">Address</label>
+                    <textarea id="customer_address" rows="2" class="field w-full px-3 py-2.5 text-sm" placeholder="Street, area, city…"></textarea>
+                </div>
+                <div>
+                    <label class="block label text-[11px] font-bold uppercase tracking-wider mb-1.5" for="customer_notes">Notes</label>
+                    <input type="text" id="customer_notes" class="field w-full px-3 py-2.5 text-sm" placeholder="Preferences, special occasions…">
+                </div>
+                <div class="pt-4 border-t border-stone-200 flex justify-end gap-3">
+                    <button type="button" id="customerCancel" class="ghost-btn font-semibold px-5 py-2.5 rounded-xl text-sm border border-stone-300">Cancel</button>
+                    <button type="submit" class="accent-btn font-semibold px-5 py-2.5 rounded-xl text-sm">Save Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Receipt Print Modal -->
     <div id="receiptModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="receiptTitle">
         <div class="modal-overlay absolute inset-0" aria-hidden="true"></div>
@@ -1173,6 +1277,7 @@
             inventory: 'shab_inventory',
             salesCatalog: 'shab_sales_catalog',
             salesOrders: 'shab_sales_orders',
+            customers: 'shab_customers',
             settings: 'shab_settings',
             history: 'shab_history'
         };
@@ -1185,10 +1290,13 @@
 
         async function sheetsFetch(action, payload) {
             try {
-                const res = await fetch(SHEETS_URL, {
+                const token = state.settings.sheetsToken || '';
+                const url = SHEETS_URL + (action === 'read' ? '?token=' + encodeURIComponent(token) : '');
+                const body = action === 'read' ? null : JSON.stringify({ token, ...(payload || {}) });
+                const res = await fetch(url, {
                     method: action === 'read' ? 'GET' : 'POST',
                     headers: action === 'read' ? {} : { 'Content-Type': 'text/plain' },
-                    body: action === 'read' ? null : JSON.stringify(payload)
+                    body
                 });
                 const txt = await res.text();
                 if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1207,6 +1315,7 @@
             if (data.sales) state.salesOrders = data.sales;
             if (data.purchases) state.purchaseOrders = data.purchases;
             if (data.inventory) state.inventory = data.inventory;
+            if (data.customers) state.customers = data.customers;
             if (data.settings) {
                 data.settings.forEach(row => {
                     try { state.settings[row.key] = JSON.parse(row.value); } catch (e) { state.settings[row.key] = row.value; }
@@ -1219,23 +1328,11 @@
             if (sheetsSyncing) return { ok: true, queued: true };
             sheetsSyncing = true;
             try {
-                const payload = {
-                    action: 'replace',
-                    tables: {
-                        sales: state.salesOrders,
-                        purchases: state.purchaseOrders,
-                        inventory: state.inventory,
-                        settings: Object.entries(state.settings).map(([k, v]) => ({ key: k, value: JSON.stringify(v) }))
-                    }
-                };
-                // POST expects action: replace with tables object
-                // We'll POST each table separately since script expects table per call
-                // Actually our script expects single table per POST with action: replace
-                // Let's do sequential writes
                 const tables = [
                     { table: 'sales', items: state.salesOrders },
                     { table: 'purchases', items: state.purchaseOrders },
                     { table: 'inventory', items: state.inventory },
+                    { table: 'customers', items: state.customers },
                     { table: 'settings', items: Object.entries(state.settings).map(([k, v]) => ({ key: k, value: JSON.stringify(v) })) }
                 ];
                 for (const t of tables) {
@@ -1513,6 +1610,7 @@
             inventory: [],
             salesCatalog: [],
             salesOrders: [],
+            customers: [],
             settings: { theme: 'light', density: false, accent: '#b45309', sheetsUrl: 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec' },
             history: [],
             // Staged orders
@@ -1536,6 +1634,7 @@
         const todayISO = () => new Date().toISOString().split('T')[0];
         const nowTime = () => new Date().toTimeString().split(' ')[0].slice(0, 5);
         const uid = (prefix = 'id') => prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
         function toast(message, type = 'success') {
             const container = $('toastContainer');
@@ -1580,6 +1679,7 @@
             const softMap = { '#b45309': '#fef3c7', '#0f766e': '#ccfbf1', '#b91c1c': '#fee2e2', '#1d4ed8': '#dbeafe', '#6b21a8': '#f3e8ff', '#374151': '#e5e7eb' };
             document.documentElement.style.setProperty('--accent-soft', softMap[s.accent] || '#fef3c7');
             if ($('sheetsUrl') && s.sheetsUrl) $('sheetsUrl').value = s.sheetsUrl;
+            if ($('sheetsToken') && s.sheetsToken) $('sheetsToken').value = s.sheetsToken;
             $$('#accentSwatches .swatch').forEach(b => {
                 b.classList.toggle('ring-2', b.dataset.accent === s.accent);
                 b.classList.toggle('ring-offset-2', b.dataset.accent === s.accent);
@@ -1641,6 +1741,7 @@
         function renderAll() {
             renderPurchaseTab();
             renderInventoryTab();
+            renderCustomersTab();
             renderSalesTab();
             renderDashboard();
             applyDensity(state.settings.density);
@@ -1848,12 +1949,96 @@
             else { allCb.checked = false; allCb.indeterminate = false; }
         }
 
+        // --- Customers Tab ---
+        function renderCustomersTab() {
+            const search = ($('c_search').value || '').toLowerCase();
+            const tb = $('c_customersTable');
+            let rows = state.customers.slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            if (search) rows = rows.filter(r => (r.name || '').toLowerCase().includes(search) || (r.phone || '').toLowerCase().includes(search));
+            tb.innerHTML = '';
+            if (!rows.length) {
+                tb.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-stone-400">No customers yet — click "Add Customer" to get started</td></tr>`;
+                return;
+            }
+            rows.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-stone-50 dark:hover:bg-stone-800/40 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-semibold">${esc(c.name || '')}
+                        <span class="block text-[11px] text-stone-400 font-normal">${c.type || ''}${c.id ? ' · ' + c.id : ''}</span>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-xs">${esc(c.phone || '')}</td>
+                    <td class="px-4 py-3 text-xs text-stone-600 max-w-[220px] truncate">${esc(c.address || '')}</td>
+                    <td class="px-4 py-3 text-xs text-stone-500 max-w-[180px] truncate">${esc(c.notes || '')}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex justify-end gap-2">
+                            <button class="ghost-btn px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 hover:bg-stone-100" data-cust-edit="${c.id}">Edit</button>
+                            <button class="ghost-btn px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50" data-cust-del="${c.id}">Delete</button>
+                        </div>
+                    </td>`;
+                tb.appendChild(tr);
+            });
+        }
+
+        function openCustomerModal(id) {
+            const c = id ? state.customers.find(x => x.id === id) : null;
+            $('customerModalTitle').textContent = c ? 'Edit Customer' : 'Add Customer';
+            $('customer_id').value = c ? c.id : '';
+            $('customer_name').value = c ? c.name : '';
+            $('customer_phone').value = c ? c.phone : '';
+            $('customer_type').value = c ? c.type : 'Regular';
+            $('customer_address').value = c ? c.address : '';
+            $('customer_notes').value = c ? c.notes : '';
+            $('customerModal').classList.add('open');
+            setTimeout(() => $('customer_name').focus(), 50);
+        }
+
+        function closeCustomerModal() { $('customerModal').classList.remove('open'); }
+
+        function saveCustomer(e) {
+            e.preventDefault();
+            const id = $('customer_id').value;
+            const name = $('customer_name').value.trim();
+            const phone = $('customer_phone').value.trim();
+            if (!name || !phone) { toast('Name and phone are required', 'error'); return; }
+            const data = {
+                name, phone,
+                type: $('customer_type').value,
+                address: $('customer_address').value.trim(),
+                notes: $('customer_notes').value.trim(),
+                created: new Date().toISOString()
+            };
+            if (id) {
+                const idx = state.customers.findIndex(x => x.id === id);
+                if (idx >= 0) state.customers[idx] = { ...state.customers[idx], ...data };
+                toast('Customer updated');
+            } else {
+                state.customers.push({ id: uid('cust'), ...data });
+                toast('Customer added');
+            }
+            closeCustomerModal();
+            renderCustomersTab();
+            saveAll();
+        }
+
+        function deleteCustomer(id) {
+            if (!confirm('Delete this customer?')) return;
+            state.customers = state.customers.filter(c => c.id !== id);
+            renderCustomersTab();
+            toast('Customer deleted');
+            saveAll();
+        }
+
         // --- Sales Tab ---
         function renderSalesTab() {
             const cats = getSalesCategories();
             const catSel = $('s_category');
             catSel.innerHTML = cats.map(c => `<option>${c}</option>`).join('');
             updateSalesSubcategories();
+            const custSel = $('s_customer');
+            const cur = custSel.value;
+            custSel.innerHTML = '<option value="">Walk-in (no account)</option>' + state.customers.map(c => `<option value="${c.id}">${esc(c.name)} — ${esc(c.phone)}</option>`).join('');
+            custSel.value = cur;
         }
 
         function updateSalesSubcategories() {
@@ -2266,6 +2451,8 @@
                 time_block: state.stagedSale[0].time_block,
                 source: state.stagedSale[0].source,
                 payment_mode: state.stagedSale[0].payment_mode,
+                customer_id: $('s_customer').value || '',
+                customer_name: (() => { const c = state.customers.find(x => x.id === $('s_customer').value); return c ? c.name : ''; })(),
                 total, items_count: state.stagedSale.length,
                 items: state.stagedSale.map((r, i) => ({ ...r, line_no: i + 1, _total: null }))
             };
@@ -2496,6 +2683,24 @@
         $('stockAdjustCancel').addEventListener('click', () => $('stockAdjustModal').classList.remove('open'));
         $('stockAdjustClose').addEventListener('click', () => $('stockAdjustModal').classList.remove('open'));
 
+        // --- Customer modal + table handlers ---
+        $('newCustomerBtn').addEventListener('click', () => openCustomerModal(null));
+        $('c_exportBtn').addEventListener('click', () => {
+            if (!state.customers.length) return toast('No customers to export', 'error');
+            downloadCSV(`customers_${todayISO()}.csv`, ['id', 'name', 'phone', 'type', 'address', 'notes', 'created'], state.customers);
+            toast('Customers CSV exported');
+        });
+        $('customerModalClose').addEventListener('click', closeCustomerModal);
+        $('customerCancel').addEventListener('click', closeCustomerModal);
+        $('customerForm').addEventListener('submit', saveCustomer);
+        $('c_search').addEventListener('input', renderCustomersTab);
+        $('c_customersTable').addEventListener('click', e => {
+            const editBtn = e.target.closest('[data-cust-edit]');
+            const delBtn = e.target.closest('[data-cust-del]');
+            if (editBtn) openCustomerModal(editBtn.dataset.custEdit);
+            else if (delBtn) deleteCustomer(delBtn.dataset.custDel);
+        });
+
         // Bulk actions
         $('inv_selectAll').addEventListener('change', e => {
             $$('#inv_tbody .inv-row-checkbox').forEach(cb => cb.checked = e.target.checked);
@@ -2572,6 +2777,10 @@
             state.settings.sheetsUrl = e.target.value.trim();
             saveAll();
         });
+        $('sheetsToken').addEventListener('change', e => {
+            state.settings.sheetsToken = e.target.value.trim();
+            saveAll();
+        });
         $$('#accentSwatches .swatch').forEach(s => s.addEventListener('click', () => {
             state.settings.accent = s.dataset.accent;
             saveAll();
@@ -2640,7 +2849,7 @@
         // TAB NAVIGATION
         // ============================================================
         function switchTab(tabId) {
-            const tabs = ['purchase', 'inventory', 'sales', 'dashboard'];
+            const tabs = ['purchase', 'inventory', 'sales', 'customers', 'dashboard'];
             if (!tabs.includes(tabId)) tabId = 'sales';
             $$('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tabId));
             $$('[role="tab"]').forEach(t => {
@@ -2669,73 +2878,116 @@
         // ============================================================
         // GOOGLE SHEETS SYNC
         // ============================================================
-        const APPS_SCRIPT_CODE = `function doPost(e) {
-  var payload = JSON.parse(e.postData.contents);
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(payload.sheet);
-  if (!sheet) {
-    sheet = ss.insertSheet(payload.sheet);
-    sheet.appendRow(payload.headers);
-  } else if (sheet.getLastRow() === 0) {
-    sheet.appendRow(payload.headers);
+        const APPS_SCRIPT_CODE = `/**
+ * Shab-E-Lazzat — Google Sheets Backend
+ * Deploy as Web App: Execute as Me, Who has access: Anyone
+ */
+const SECRET_TOKEN = 'change-me-to-your-own-token'; // must match app Settings
+
+const SHEET_NAMES = {
+  sales: 'Sales', purchases: 'Purchases', inventory: 'Inventory',
+  customers: 'Customers', settings: 'Settings'
+};
+const HEADERS = {
+  sales: ['so_id','date','time','time_block','source','category','subcategory','item','size','qty','unit_price','line_total','is_combo','add_ons','payment_mode','customer_id','customer_name'],
+  purchases: ['po_id','date','time','supplier','item','unit','qty','unit_price','gst','discount','line_total','expected_delivery','payment_mode'],
+  inventory: ['name','category','subcategory','unit','currentStock','minLevel','maxLevel','avgCost','value','supplier','lastUpdated'],
+  customers: ['id','name','phone','type','address','notes','created'],
+  settings: ['key','value']
+};
+
+function checkToken(e) {
+  var sent = e && e.parameter && e.parameter.token;
+  if (e && e.postData) {
+    try { var p = JSON.parse(e.postData.contents); sent = p.token || sent; } catch (err) {}
   }
-  var rows = (payload.rows || []).map(function (r) {
-    return payload.headers.map(function (h) { return r[h] != null ? r[h] : ''; });
-  });
-  if (rows.length) {
-    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, payload.headers.length).setValues(rows);
-  }
-  return ContentService.createTextOutput(JSON.stringify({ ok: true, appended: rows.length }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return sent === SECRET_TOKEN;
+}
+
+function doGet(e) {
+  try {
+    if (!checkToken(e)) return jsonResponse({ ok: false, error: 'Unauthorized' }, 403);
+    const data = {};
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    Object.entries(SHEET_NAMES).forEach(function ([key, name]) {
+      const sheet = ss.getSheetByName(name);
+      if (!sheet || sheet.getLastRow() === 0) { data[key] = []; return; }
+      const values = sheet.getDataRange().getValues();
+      const hdrs = values[0];
+      data[key] = values.slice(1).map(function (r) {
+        const obj = {};
+        hdrs.forEach(function (h, i) { obj[h] = r[i]; });
+        return obj;
+      });
+    });
+    return jsonResponse({ ok: true, data: data });
+  } catch (err) { return jsonResponse({ ok: false, error: err.toString() }, 500); }
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    if (payload.token !== SECRET_TOKEN) return jsonResponse({ ok: false, error: 'Unauthorized' }, 403);
+    const action = payload.action || 'upsert';
+    const table = payload.table;
+    const items = payload.items || [];
+    if (!table || !SHEET_NAMES[table]) return jsonResponse({ ok: false, error: 'Invalid table' }, 400);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAMES[table]);
+    if (!sheet) { sheet = ss.insertSheet(SHEET_NAMES[table]); sheet.appendRow(HEADERS[table]); }
+    else if (sheet.getLastRow() === 0) { sheet.appendRow(HEADERS[table]); }
+    const headers = HEADERS[table];
+    if (action === 'replace') {
+      if (sheet.getLastRow() > 1) sheet.deleteRows(2, sheet.getLastRow() - 1);
+      if (items.length) {
+        sheet.getRange(2, 1, items.length, headers.length)
+          .setValues(items.map(function (item) { return headers.map(function (h) { return item[h] != null ? item[h] : ''; }); }));
+      }
+      return jsonResponse({ ok: true, replaced: items.length });
+    }
+    if (action === 'upsert') {
+      const rows = sheet.getDataRange().getValues().slice(1);
+      const idKey = headers[0];
+      items.forEach(function (item) {
+        const rowData = headers.map(function (h) { return item[h] != null ? item[h] : ''; });
+        let idx = -1;
+        rows.forEach(function (r, i) { if (String(r[0]) === String(item[idKey])) idx = i; });
+        if (idx >= 0) sheet.getRange(idx + 2, 1, 1, headers.length).setValues([rowData]);
+        else sheet.appendRow(rowData);
+      });
+      return jsonResponse({ ok: true, upserted: items.length });
+    }
+    if (action === 'delete') {
+      const idKey = headers[0];
+      const rows = sheet.getDataRange().getValues().slice(1);
+      rows.forEach(function (r, i) { if (String(r[0]) === String(payload.id)) sheet.deleteRow(i + 2); });
+      return jsonResponse({ ok: true, deleted: payload.id });
+    }
+    return jsonResponse({ ok: false, error: 'Unknown action' }, 400);
+  } catch (err) { return jsonResponse({ ok: false, error: err.toString() }, 500); }
+}
+
+function doOptions() {
+  return ContentService.createTextOutput('').setMimeType(ContentService.MimeType.TEXT);
+}
+
+function jsonResponse(obj, status) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }`;
 
-        function getSheetsUrl() {
-            const url = $('sheetsUrl').value.trim();
-            if (!url) { toast('Set your Apps Script URL first', 'error'); return null; }
-            return url.replace(/\/$/, '');
-        }
-
-        async function pushToSheets(sheet, headers, rows) {
-            const url = getSheetsUrl();
-            if (!url) return false;
-            if (!rows.length) { toast(`Nothing to push for ${sheet}`, 'error'); return false; }
-            const payload = { sheet, headers, rows: rows.map(r => {
-                const out = {};
-                headers.forEach(h => { out[h] = r[h] != null ? r[h] : ''; });
-                return out;
-            }) };
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(payload)
-                });
-                const txt = await res.text();
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const json = JSON.parse(txt);
-                if (json.ok) { toast(`Pushed ${json.appended} row(s) to "${sheet}"`); return true; }
-                throw new Error(txt.slice(0, 80));
-            } catch (err) {
-                toast('Push failed: ' + err.message, 'error');
-                return false;
-            }
-        }
-
-        $('pushSalesBtn').addEventListener('click', () => {
-            const rows = state.stagedSale;
-            const headers = ['so_id', 'date', 'time', 'time_block', 'source', 'category', 'subcategory', 'item', 'size', 'qty', 'unit_price', 'line_total', 'is_combo', 'add_ons', 'payment_mode'];
-            pushToSheets('Sales', headers, rows.map(r => ({ ...r, unit_price: r.unit_price.toFixed(2), line_total: r.line_total.toFixed(2) })));
+        $('pushSalesBtn').addEventListener('click', async () => {
+            if (!state.stagedSale.length) return toast('Stage at least one sale item first', 'error');
+            const res = await sheetsFetch('write', { action: 'upsert', table: 'sales', items: state.stagedSale });
+            toast(res.ok ? 'Sales staged rows pushed' : 'Push failed — new script deployed?', res.ok ? 'success' : 'error');
         });
-
-        $('pushPurchasesBtn').addEventListener('click', () => {
-            const rows = state.stagedPurchase;
-            const headers = ['po_id', 'date', 'time', 'supplier', 'item', 'unit', 'qty', 'unit_price', 'gst', 'discount', 'line_total', 'expected_delivery', 'payment_mode'];
-            pushToSheets('Purchases', headers, rows.map(r => ({ ...r, unit_price: r.unit_price.toFixed(2), line_total: r.line_total.toFixed(2) })));
+        $('pushPurchasesBtn').addEventListener('click', async () => {
+            if (!state.stagedPurchase.length) return toast('Stage at least one purchase item first', 'error');
+            const res = await sheetsFetch('write', { action: 'upsert', table: 'purchases', items: state.stagedPurchase });
+            toast(res.ok ? 'Purchase staged rows pushed' : 'Push failed — new script deployed?', res.ok ? 'success' : 'error');
         });
-
-        $('pushInventoryBtn').addEventListener('click', () => {
-            const headers = ['name', 'category', 'subcategory', 'unit', 'currentStock', 'minLevel', 'maxLevel', 'avgCost', 'value', 'supplier', 'lastUpdated'];
-            pushToSheets('Inventory', headers, state.inventory.map(i => ({ ...i, value: (i.currentStock * i.avgCost).toFixed(2) })));
+        $('pushInventoryBtn').addEventListener('click', async () => {
+            const res = await sheetsFetch('write', { action: 'replace', table: 'inventory', items: state.inventory });
+            toast(res.ok ? 'Inventory pushed to Sheets' : 'Push failed — new script deployed?', res.ok ? 'success' : 'error');
         });
 
         $('copyScriptBtn').addEventListener('click', async () => {
@@ -2760,7 +3012,8 @@
                 if (e.key === '1') switchTab('purchase');
                 else if (e.key === '2') switchTab('inventory');
                 else if (e.key === '3') switchTab('sales');
-                else if (e.key === '4') switchTab('dashboard');
+                else if (e.key === '4') switchTab('customers');
+                else if (e.key === '5') switchTab('dashboard');
             }
         });
 

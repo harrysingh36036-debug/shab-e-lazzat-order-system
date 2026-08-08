@@ -29,14 +29,20 @@ A lightweight, single-file order capture, purchase, and inventory management too
 - 7-day sales & purchase trend charts (canvas, no libraries).
 - Recent sales & purchase history tables.
 
+### Customers
+- **Customer database** — name, phone, type (Regular / Walk-in / Online / Bulk / VIP), address, notes.
+- **Search + add / edit / delete**, CSV export.
+- Pick a linked customer on the Sales tab — order is tagged with `customer_id` / `customer_name` in the sheet.
+- Synced to Google Sheets in the `Customers` tab.
+
 ### Platform
-- **4 tabs** (Purchase / Inventory / Sales / Dashboard) with desktop + mobile navigation.
+- **5 tabs** (Purchase / Inventory / Sales / Customers / Dashboard) with desktop + mobile navigation.
 - **Dark mode + 6 accent colors + compact density** — all persisted.
 - **Undo / Redo** (Ctrl+Z / Ctrl+Shift+Z) for staged rows, saved orders, inventory edits and stock adjustments.
-- **Keyboard shortcuts** — `1`–`4` switch tabs, `Ctrl+,` settings, `Ctrl+D` dark mode.
-- **Google Sheets sync** — push staged sales, purchase orders, or full inventory to a Google Sheet via a free Apps Script webhook (no API keys needed). Settings → Google Sheets Sync → copy the script, deploy it, paste the URL.
+- **Keyboard shortcuts** — `1`–`5` switch tabs, `Ctrl+,` settings, `Ctrl+D` dark mode.
+- **Google Sheets sync** — every save auto-syncs all tables (sales, purchases, inventory, customers, settings) to a Google Sheet via Apps Script; the login gates the UI only.
 - **Backup / restore** — export all data as JSON, import it back, or clear everything.
-- **Local-first** — all data lives in `localStorage` on the device; nothing leaves the browser except your explicit CSV / Sheets pushes.
+- **Local-first** — data caches in `localStorage`, with Google Sheets as the shared source of truth across users.
 
 ## Usage
 
@@ -49,15 +55,23 @@ A lightweight, single-file order capture, purchase, and inventory management too
 
 1. Open the sheet you want to sync to.
 2. Extensions → Apps Script → paste the code from **Settings → Copy Apps Script code**.
-3. Deploy → New deployment → **Web app** → Execute as *Me*, access *Anyone* → Deploy.
-4. Copy the `/exec` URL into **Settings → Google Sheets Sync** and hit **Push**.
+3. In the script, set a secret `SECRET_TOKEN` (the same one you'll enter in the app's Settings → Secret Token).
+4. Deploy → New deployment → **Web app** → Execute as *Me*, access *Anyone* → Deploy.
+5. Copy the `/exec` URL into **Settings → Google Sheets Sync**, enter the Secret Token, and every save auto-syncs.
+6. Manual **Push** buttons still work for the current staged rows.
 
-## Data storage
+## Data storage & safety
 
-All data is stored in the browser's `localStorage`, scoped per origin:
-`shab_purchase_catalog`, `shab_purchase_orders`, `shab_inventory`, `shab_sales_catalog`, `shab_sales_orders`, `shab_settings`, `shab_history`.
+App data is cached in the browser's `localStorage`:
+`shab_purchase_catalog`, `shab_purchase_orders`, `shab_inventory`, `shab_sales_catalog`, `shab_sales_orders`, `shab_customers`, `shab_settings`, `shab_history`.
 
-Back up regularly via **Settings → Export All Data (JSON)**.
+The **source of truth** is the Google Sheet — any logged-in user sees the same data, synced on every save.
+
+**Is my data safe with the login?** The login screen (password hashes in `localStorage`) protects access to the *app UI* on shared devices, but anyone who obtains the Apps Script URL from the page source and knows the token can read/write the sheet directly — because this is a fully client-side app, real security is impossible without a server. To keep data safe:
+- Set a long, unique `SECRET_TOKEN` in both the script and app Settings — unauthorized calls are rejected (403).
+- Keep the spreadsheet itself private (never share the "view" link publicly).
+- Don't post the `/exec` URL or token anywhere public.
+- For real multi-user security (per-user passwords, permissions), you need a server-side backend — this static app can't guarantee that.
 
 ## Menu / catalog
 

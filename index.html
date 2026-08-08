@@ -1649,7 +1649,7 @@
             salesCatalog: [],
             salesOrders: [],
             customers: [],
-            settings: { theme: 'light', density: false, accent: '#b45309', sheetsUrl: 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec' },
+            settings: { theme: 'light', density: false, accent: '#b45309', sheetsUrl: 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec', sheetsToken: 'A35DDVFDH543GHDFI7TDGBD' },
             history: [],
             // Staged orders
             stagedPurchase: [],
@@ -1677,6 +1677,9 @@
                     if (data) state[key] = key === 'settings' ? { ...state.settings, ...JSON.parse(data) } : JSON.parse(data);
                 } catch (e) { console.error('Load failed:', key, e); }
             });
+            // Ensure sync config always present (older saves may lack the token)
+            state.settings.sheetsUrl = state.settings.sheetsUrl || 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec';
+            state.settings.sheetsToken = state.settings.sheetsToken || 'A35DDVFDH543GHDFI7TDGBD';
             // Initialize defaults if empty
             if (!state.purchaseCatalog.length) state.purchaseCatalog = DEFAULT_PURCHASE_CATALOG;
             if (!state.salesCatalog.length) state.salesCatalog = DEFAULT_SALES_CATALOG;

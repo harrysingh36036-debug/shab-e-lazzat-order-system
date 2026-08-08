@@ -1240,7 +1240,7 @@
             inventory: [],
             salesCatalog: [],
             salesOrders: [],
-            settings: { theme: 'light', density: false, accent: '#b45309' },
+            settings: { theme: 'light', density: false, accent: '#b45309', sheetsUrl: 'https://script.google.com/macros/s/AKfycbxgUED-SrCm0z1C_KtAYs70iQ7TZyc17Vbuhd0Ok2iLOwqjpUbv1tUogZLrXEpkDg/exec' },
             history: [],
             // Staged orders
             stagedPurchase: [],
@@ -1283,7 +1283,7 @@
             Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
                 try {
                     const data = localStorage.getItem(storageKey);
-                    if (data) state[key] = JSON.parse(data);
+                    if (data) state[key] = key === 'settings' ? { ...state.settings, ...JSON.parse(data) } : JSON.parse(data);
                 } catch (e) { console.error('Load failed:', key, e); }
             });
             // Initialize defaults if empty

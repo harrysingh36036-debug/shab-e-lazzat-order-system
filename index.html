@@ -1346,6 +1346,27 @@
         }
 
         // ============================================================
+        // UTILITIES
+        // ============================================================
+        const $ = (id) => document.getElementById(id);
+        const $$ = (sel, root = document) => root.querySelectorAll(sel);
+        const fmt = (n) => '₹' + Number(n || 0).toFixed(2);
+        const fmtNum = (n) => Number(n || 0).toFixed(2);
+        const todayISO = () => new Date().toISOString().split('T')[0];
+        const nowTime = () => new Date().toTimeString().split(' ')[0].slice(0, 5);
+        const uid = (prefix = 'id') => prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        function toast(message, type = 'success') {
+            const container = $('toastContainer');
+            const el = document.createElement('div');
+            el.className = `toast px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-xl ${type === 'success' ? 'bg-stone-900 dark:bg-stone-100 dark:text-stone-900' : 'bg-red-600'} pointer-events-auto`;
+            el.textContent = message;
+            container.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-12px)'; setTimeout(() => el.remove(), 250); }, 2500);
+        }
+
+        // ============================================================
         // AUTH LAYER — login only (shared data, no isolation)
         // ============================================================
         const USERS_KEY = 'shab_users';
@@ -1467,10 +1488,10 @@
             if (confirm('Sign out of Shab-E-Lazzat?')) handleLogout();
         });
 
-        // Seed a default admin account on first run (no users yet)
+        // Seed the default admin account if it doesn't already exist
         async function bootstrapDefaultUser() {
             const users = getUsers();
-            if (users.length) return;
+            if (users.some(x => x.u.toLowerCase() === 'admin')) return;
             const salt = Math.random().toString(36).slice(2, 10);
             const h = await hashPassword('admin123', salt);
             users.push({ u: 'admin', s: salt, h, admin: true });
@@ -1640,27 +1661,6 @@
             undoStack: [],
             redoStack: []
         };
-
-        // ============================================================
-        // UTILITIES
-        // ============================================================
-        const $ = (id) => document.getElementById(id);
-        const $$ = (sel, root = document) => root.querySelectorAll(sel);
-        const fmt = (n) => '₹' + Number(n || 0).toFixed(2);
-        const fmtNum = (n) => Number(n || 0).toFixed(2);
-        const todayISO = () => new Date().toISOString().split('T')[0];
-        const nowTime = () => new Date().toTimeString().split(' ')[0].slice(0, 5);
-        const uid = (prefix = 'id') => prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
-        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-        function toast(message, type = 'success') {
-            const container = $('toastContainer');
-            const el = document.createElement('div');
-            el.className = `toast px-4 py-2.5 rounded-xl text-sm font-semibold text-white shadow-xl ${type === 'success' ? 'bg-stone-900 dark:bg-stone-100 dark:text-stone-900' : 'bg-red-600'} pointer-events-auto`;
-            el.textContent = message;
-            container.appendChild(el);
-            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-12px)'; setTimeout(() => el.remove(), 250); }, 2500);
-        }
 
         function saveAll() {
             Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
